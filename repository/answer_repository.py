@@ -63,3 +63,4 @@ async def delete_answer_by_id(answer_id: int):
 async def delete_all_user_answers_by_user_id(user_id: int):
     query = f"DELETE FROM {TABLE_NAME} WHERE user_id=:user_id"
     await database.execute(query, values={"user_id": user_id})
+
