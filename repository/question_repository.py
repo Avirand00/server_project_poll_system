@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from model.question import Question
 from repository.database import database
@@ -27,6 +27,11 @@ async def create_question(question: Question) -> int:
 async def get_question_by_id(question_id: int) -> Optional[Question]:
     query = f"SELECT * FROM {TABLE_NAME} WHERE id=:id"
     return await database.fetch_one(query, values={"id": question_id})
+
+
+async def get_all_questions() -> List[Question]:
+    query = f"SELECT * FROM {TABLE_NAME}"
+    return await database.fetch_all(query)
 
 
 async def update_question_by_id(question_id: int, question: Question):

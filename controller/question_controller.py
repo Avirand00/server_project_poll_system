@@ -17,28 +17,21 @@ async def create_question(question: Question):
 
 @router.get("/{question_id}", status_code=status.HTTP_200_OK)
 async def get_question_by_id(question_id: int):
-    exist_question = await question_service.get_by_id(question_id)
-    if not exist_question:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail=f"Question {question_id} Not Found")
-    return exist_question
+    return await question_service.get_question_by_id(question_id)
+
+
+@router.get("/", status_code=status.HTTP_200_OK)
+async def get_all_questions():
+    return await question_service.get_all_questions()
 
 
 @router.put("/{question_id}")
 async def update_question(question_id: int, question: Question):
-    exist_question = await question_service.get_by_id(question_id)
-    if not exist_question:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail=f"Question {question_id} Not Found")
     await question_service.update_question_by_id(question_id, question)
 
 
 @router.delete("/{question_id}", status_code=status.HTTP_200_OK)
 async def delete_question(question_id: int):
-    exist_question = await question_service.get_by_id(question_id)
-    if not exist_question:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail=f"Question {question_id} Not Found")
     await question_service.delete_question_by_id(question_id)
 
 
