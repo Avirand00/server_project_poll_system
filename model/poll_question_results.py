@@ -4,7 +4,6 @@ from pydantic import BaseModel
 class PollQuestionResults(BaseModel):
     question_id: int
     title: str
-    total_answers: int
     option_1: str
     option_1_result: int
     option_2: str

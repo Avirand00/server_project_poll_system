@@ -6,50 +6,66 @@ from model.answer import Answer
 from model.answer_request import AnswerRequest
 from model.answer_response import AnswerResponse
 from model.poll_question_results import PollQuestionResults
-from model.poll_user_results import PollUserResults
 from model.question import Question
 from model.user_poll_result import UserQuestionResult
 from repository import answer_repository
 from service import question_service
 
 
-async def create_answer(user_id, user_answer: AnswerRequest):
-    exist_answer = await check_answer_exist(user_id, user_answer)
-    if exist_answer:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail=f"User already answered question {user_answer.question_id}")
+async def create_user_answers(user_id, answer_request: List[AnswerRequest]):
+    answers = []
+    for user_answer in answer_request:
+        exist_answer = await check_answer_exist(user_id, user_answer)
+        if exist_answer:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=f"User already answered question {user_answer.question_id}")
 
-    exist_question = await question_service.get_question_by_id(user_answer.question_id)
-    if not exist_question:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail=f"Question {user_answer.question_id} Not Found")
+        exist_question = await question_service.get_question_by_id(user_answer.question_id)
+        if not exist_question:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail=f"Question {user_answer.question_id} Not Found")
 
-    allowed_answers = [1, 2, 3, 4]
-    if user_answer.answer not in allowed_answers:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail=f"No such option: {user_answer.answer}")
+        allowed_answers = [1, 2, 3, 4]
+        if user_answer.answer not in allowed_answers:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=f"No such option: {user_answer.answer}")
 
-    answer = Answer(user_id=user_id,
-                    question_id=user_answer.question_id,
-                    answer=user_answer.answer)
-    await answer_repository.create_answer(answer)
+        answer = Answer(user_id=user_id,
+                        question_id=user_answer.question_id,
+                        answer=user_answer.answer)
+
+        answers.append(answer)
+
+    for answer in answers:
+        await answer_repository.create_answer(answer)
 
 
-async def update_answer(user_id: int, user_answer: AnswerRequest):
-    exist_answer = await check_answer_exist(user_id, user_answer)
-    if not exist_answer:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail=f"User: {user_id} did not answer question: {user_answer.question_id}")
-    allowed_answers = [1, 2, 3, 4]
-    if user_answer.answer not in allowed_answers:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail=f"No such option: {user_answer.answer}")
+async def update_answer(user_id: int, answer_request: List[AnswerRequest]):
+    answers = []
+    for user_answer in answer_request:
+        exist_question = await question_service.get_question_by_id(user_answer.question_id)
+        if not exist_question:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail=f"Question {user_answer.question_id} Not Found")
 
-    answer = Answer(user_id=user_id,
-                    question_id=user_answer.question_id,
-                    answer=user_answer.answer)
+        exist_answer = await check_answer_exist(user_id, user_answer)
+        if not exist_answer:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail=f"No answer for question: {user_answer.question_id}")
 
-    await answer_repository.update_answer(user_id, answer)
+        allowed_answers = [1, 2, 3, 4]
+        if user_answer.answer not in allowed_answers:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=f"Question: {user_answer.question_id} No such option: {user_answer.answer}")
+
+        answer = Answer(user_id=user_id,
+                        question_id=user_answer.question_id,
+                        answer=user_answer.answer)
+
+        answers.append(answer)
+
+    for answer in answers:
+        await answer_repository.update_answer(user_id, answer)
 
 
 async def check_user_exist_and_registered_by_id(user_id: int) -> bool:
@@ -82,20 +98,29 @@ async def get_poll_results() -> List[PollQuestionResults]:
     results = []
     for question in questions:
         question_id = question.id
-        question_result = await get_poll_results_by_question_id(question_id)
+        question_result = await get_poll_question_results_by_question_id(question_id)
         results.append(question_result)
 
     return results
 
 
-async def get_poll_results_by_question_id(question_id: int) -> PollQuestionResults:
+async def get_poll_question_total_answers_by_question_id(question_id: int) -> str:
     exist_question = await question_service.get_question_by_id(question_id)
     if not exist_question:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"Question {question_id} Not Found")
 
     answers = await answer_repository.get_all_question_answers(question_id)
-    total_answers = len(answers)
+    return f"Total answers for question {question_id}: {len(answers)}"
+
+
+async def get_poll_question_results_by_question_id(question_id: int) -> PollQuestionResults:
+    exist_question = await question_service.get_question_by_id(question_id)
+    if not exist_question:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"Question {question_id} Not Found")
+
+    answers = await answer_repository.get_all_question_answers(question_id)
     results = [0, 0, 0, 0]
 
     for i in range(0, 4):
@@ -105,7 +130,6 @@ async def get_poll_results_by_question_id(question_id: int) -> PollQuestionResul
 
     question_results = PollQuestionResults(question_id=question_id,
                                            title=exist_question.title,
-                                           total_answers=total_answers,
                                            option_1=exist_question.option_1,
                                            option_1_result=results[0],
                                            option_2=exist_question.option_2,
@@ -117,29 +141,31 @@ async def get_poll_results_by_question_id(question_id: int) -> PollQuestionResul
     return question_results
 
 
-async def get_poll_results_by_user_id(user_id: int) -> PollUserResults:
+async def get_poll_results_by_user_id(user_id: int) -> List[UserQuestionResult]:
     exist_user = await user_service_api.get_user_by_id(user_id)
     if not exist_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"User {user_id} Not Found")
 
     answers = await answer_repository.get_all_user_answers(user_id)
-    total_answers = len(answers)
     user_answers = []
     for answer in answers:
         question = await question_service.get_question_by_id(answer.question_id)
-        question_result = UserQuestionResult(question_id=question.id,
-                                             title=question.title,
-                                             answer=answer.answer,
-                                             answer_text=await extract_text_for_answer(question, answer.answer))
+        question_result = UserQuestionResult(title=question.title,
+                                             answer=await extract_text_for_answer(question, answer.answer))
         user_answers.append(question_result)
 
-    user_results = PollUserResults(user_id=user_id,
-                                   first_name=exist_user.first_name,
-                                   last_name=exist_user.last_name,
-                                   total_questions_answered=total_answers,
-                                   poll_results=user_answers)
-    return user_results
+    return user_answers
+
+
+async def get_poll_user_total_answers_by_user_id(user_id: int) -> str:
+    exist_user = await user_service_api.get_user_by_id(user_id)
+    if not exist_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"User {user_id} Not Found")
+
+    answers = await answer_repository.get_all_user_answers(user_id)
+    return f"Total answers for user: {user_id} are: {len(answers)}"
 
 
 async def extract_text_for_answer(question: Question, option_number: int) -> str:
@@ -157,6 +183,15 @@ async def extract_text_for_answer(question: Question, option_number: int) -> str
 
 async def delete_answer_by_id(answer_id: int):
     await answer_repository.delete_answer_by_id(answer_id)
+
+
+async def delete_all_question_answers_by_question_id(question_id: int):
+    exist_question = await question_service.get_question_by_id(question_id)
+    if not exist_question:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f"Question: {question_id} Not Found")
+
+    await answer_repository.delete_all_question_answers_by_question_id(question_id)
 
 
 async def delete_all_user_answers_by_user_id(user_id: int):
