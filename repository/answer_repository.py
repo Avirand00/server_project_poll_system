@@ -1,5 +1,4 @@
-from typing import List, Optional
-
+from typing import List
 from model.answer import Answer
 from repository.database import database
 
@@ -58,6 +57,12 @@ async def get_all_user_answers(user_id: int) -> List[Answer]:
 async def delete_answer_by_id(answer_id: int):
     query = f"DELETE FROM {TABLE_NAME} WHERE id=:answer_id"
     await database.execute(query, values={"answer_id": answer_id})
+
+
+async def delete_all_question_answers_by_question_id(question_id: int):
+    query = f"DELETE FROM {TABLE_NAME} WHERE question_id=:question_id"
+    await database.execute(query, values={"question_id": question_id})
+
 
 
 async def delete_all_user_answers_by_user_id(user_id: int):

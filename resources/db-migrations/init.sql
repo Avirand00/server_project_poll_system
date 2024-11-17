@@ -24,3 +24,22 @@ INSERT INTO question (title, option_1, option_2, option_3, option_4) VALUES
 ('What is your preferred mode of transportation?', 'Car', 'Bicycle', 'Public Transport', 'Walking'),
 ('Which season do you like the most?', 'Winter', 'Spring', 'Summer', 'Autumn'),
 ('What is your favorite type of cuisine?', 'Italian', 'Chinese', 'Mexican', 'Indian');
+
+
+INSERT INTO user_answer (user_id, question_id, answer) VALUES
+(1, 1, 2),
+(1, 3, 4),
+(1, 5, 1),
+(1, 2, 3),
+(1, 4, 2),
+(3, 2, 1),
+(3, 1, 3),
+(3, 4, 4),
+(3, 3, 2),
+(3, 5, 3),
+(4, 5, 2),
+(4, 3, 1),
+(4, 2, 4),
+(4, 4, 3),
+(4, 1, 2);
+
