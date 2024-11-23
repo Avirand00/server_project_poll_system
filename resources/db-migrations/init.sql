@@ -15,7 +15,8 @@ CREATE TABLE user_answer (
     user_id INT NOT NULL,
     question_id INT NOT NULL,
     answer INT NOT NULL,
-    FOREIGN KEY (question_id) REFERENCES question(id)
+    UNIQUE KEY unique_user_question (user_id, question_id),
+    FOREIGN KEY (question_id) REFERENCES question(id) ON DELETE CASCADE
 );
 
 INSERT INTO question (title, option_1, option_2, option_3, option_4) VALUES
@@ -42,4 +43,3 @@ INSERT INTO user_answer (user_id, question_id, answer) VALUES
 (4, 2, 4),
 (4, 4, 3),
 (4, 1, 2);
-

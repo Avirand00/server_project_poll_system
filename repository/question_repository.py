@@ -1,5 +1,4 @@
 from typing import Optional, List
-
 from model.question import Question
 from repository.database import database
 

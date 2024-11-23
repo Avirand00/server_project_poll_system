@@ -28,18 +28,13 @@ async def update_answer(user_id: int, user_answer: Answer):
 
 async def get_all_answers() -> List[Answer]:
     query = f"SELECT * FROM {TABLE_NAME}"
-    results = await database.fetch_all(query)
-    return [Answer(**result) for result in results]
+    return await database.fetch_all(query)
 
 
 async def get_answer_by_user_question(user_id: int, question_id: int) -> bool:
     query = f"SELECT * FROM {TABLE_NAME} WHERE user_id=:user_id AND question_id=:question_id"
     values = {"user_id": user_id, "question_id": question_id}
-    result = await database.fetch_one(query, values)
-    if result:
-        return True
-    else:
-        return False
+    return await database.fetch_one(query, values)
 
 
 async def get_all_question_answers(question_id: int) -> List[Answer]:
@@ -64,8 +59,6 @@ async def delete_all_question_answers_by_question_id(question_id: int):
     await database.execute(query, values={"question_id": question_id})
 
 
-
 async def delete_all_user_answers_by_user_id(user_id: int):
     query = f"DELETE FROM {TABLE_NAME} WHERE user_id=:user_id"
     await database.execute(query, values={"user_id": user_id})
-

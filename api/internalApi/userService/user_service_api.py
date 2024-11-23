@@ -18,7 +18,3 @@ async def get_user_by_id(user_id: int) -> Optional[User]:
 
         except httpx.HTTPStatusError as exception:
             print(f"Error in getting user details: {exception.response}")
-
-
-
-

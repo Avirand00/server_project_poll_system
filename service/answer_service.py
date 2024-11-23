@@ -14,27 +14,34 @@ from service import question_service
 
 async def create_user_answers(user_id, answer_request: List[AnswerRequest]):
     answers = []
+    last_question_id = []
     for user_answer in answer_request:
-        exist_answer = await check_answer_exist(user_id, user_answer)
-        if exist_answer:
+        if user_answer.question_id in last_question_id:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                detail=f"User already answered question {user_answer.question_id}")
+                                detail=f"Question {user_answer.question_id} appears more than once")
 
-        exist_question = await question_service.get_question_by_id(user_answer.question_id)
-        if not exist_question:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail=f"Question {user_answer.question_id} Not Found")
+        else:
+            exist_answer = await check_answer_exist(user_id, user_answer)
+            if exist_answer:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                    detail=f"User already answered question {user_answer.question_id}")
 
-        allowed_answers = [1, 2, 3, 4]
-        if user_answer.answer not in allowed_answers:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                detail=f"No such option: {user_answer.answer}")
+            exist_question = await question_service.get_question_by_id(user_answer.question_id)
+            if not exist_question:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                    detail=f"Question {user_answer.question_id} Not Found")
 
-        answer = Answer(user_id=user_id,
-                        question_id=user_answer.question_id,
-                        answer=user_answer.answer)
+            allowed_answers = [1, 2, 3, 4]
+            if user_answer.answer not in allowed_answers:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                    detail=f"No such option: {user_answer.answer}")
 
-        answers.append(answer)
+            answer = Answer(user_id=user_id,
+                            question_id=user_answer.question_id,
+                            answer=user_answer.answer)
+
+            answers.append(answer)
+            last_question_id.append(user_answer.question_id)
 
     for answer in answers:
         await answer_repository.create_answer(answer)
@@ -42,27 +49,34 @@ async def create_user_answers(user_id, answer_request: List[AnswerRequest]):
 
 async def update_answer(user_id: int, answer_request: List[AnswerRequest]):
     answers = []
+    last_question_id = []
     for user_answer in answer_request:
-        exist_question = await question_service.get_question_by_id(user_answer.question_id)
-        if not exist_question:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail=f"Question {user_answer.question_id} Not Found")
-
-        exist_answer = await check_answer_exist(user_id, user_answer)
-        if not exist_answer:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail=f"No answer for question: {user_answer.question_id}")
-
-        allowed_answers = [1, 2, 3, 4]
-        if user_answer.answer not in allowed_answers:
+        if user_answer.question_id in last_question_id:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                detail=f"Question: {user_answer.question_id} No such option: {user_answer.answer}")
+                                detail=f"Question {user_answer.question_id} appears more than once")
 
-        answer = Answer(user_id=user_id,
-                        question_id=user_answer.question_id,
-                        answer=user_answer.answer)
+        else:
+            exist_question = await question_service.get_question_by_id(user_answer.question_id)
+            if not exist_question:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                    detail=f"Question {user_answer.question_id} Not Found")
 
-        answers.append(answer)
+            exist_answer = await check_answer_exist(user_id, user_answer)
+            if not exist_answer:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                    detail=f"No answer for question: {user_answer.question_id}")
+
+            allowed_answers = [1, 2, 3, 4]
+            if user_answer.answer not in allowed_answers:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                    detail=f"Question: {user_answer.question_id} No such option: {user_answer.answer}")
+
+            answer = Answer(user_id=user_id,
+                            question_id=user_answer.question_id,
+                            answer=user_answer.answer)
+
+            answers.append(answer)
+            last_question_id.append(answer.question_id)
 
     for answer in answers:
         await answer_repository.update_answer(user_id, answer)

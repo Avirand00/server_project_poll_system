@@ -1,11 +1,8 @@
 from typing import Optional, List
-
 from fastapi import HTTPException
 from starlette import status
-
 from model.question import Question
 from repository import question_repository
-from service import answer_service
 
 
 async def create_question(question: Question) -> int:
@@ -30,5 +27,4 @@ async def update_question_by_id(question_id: int, question: Question):
 
 
 async def delete_question_by_id(question_id: int):
-    await answer_service.delete_all_question_answers_by_question_id(question_id)
     await question_repository.delete_question(question_id)
