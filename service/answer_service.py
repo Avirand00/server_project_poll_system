@@ -6,7 +6,6 @@ from model.answer import Answer
 from model.answer_request import AnswerRequest
 from model.answer_response import AnswerResponse
 from model.poll_question_results import PollQuestionResults
-from model.question import Question
 from model.user_poll_result import UserQuestionResult
 from repository import answer_repository
 from service import question_service
@@ -162,14 +161,12 @@ async def get_poll_results_by_user_id(user_id: int) -> List[UserQuestionResult]:
                             detail=f"User {user_id} Not Found")
 
     answers = await answer_repository.get_all_user_answers(user_id)
-    user_answers = []
+    user_answers_with_text = []
     for answer in answers:
-        question = await question_service.get_question_by_id(answer.question_id)
-        question_result = UserQuestionResult(title=question.title,
-                                             answer=await extract_text_for_answer(question, answer.answer))
-        user_answers.append(question_result)
+        question_result = await answer_to_text_answer(answer)
+        user_answers_with_text.append(question_result)
 
-    return user_answers
+    return user_answers_with_text
 
 
 async def get_poll_user_total_answers_by_user_id(user_id: int) -> str:
@@ -182,17 +179,18 @@ async def get_poll_user_total_answers_by_user_id(user_id: int) -> str:
     return f"Total answers for user: {user_id} are: {len(answers)}"
 
 
-async def extract_text_for_answer(question: Question, option_number: int) -> str:
+async def answer_to_text_answer(answer: Answer) -> UserQuestionResult:
     answer_text = ""
-    if option_number == 1:
+    question = await question_service.get_question_by_id(answer.question_id)
+    if answer.answer == 1:
         answer_text = question.option_1
-    elif option_number == 2:
+    elif answer.answer == 2:
         answer_text = question.option_2
-    elif option_number == 3:
+    elif answer.answer == 3:
         answer_text = question.option_3
-    elif option_number == 4:
+    elif answer.answer == 4:
         answer_text = question.option_4
-    return answer_text
+    return UserQuestionResult(title=question.title, answer=answer_text)
 
 
 async def delete_answer_by_id(answer_id: int):
