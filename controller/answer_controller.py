@@ -55,7 +55,7 @@ async def get_poll_user_total_answers_by_user_id(user_id: int):
     return await answer_service.get_poll_user_total_answers_by_user_id(user_id)
 
 
-@router.delete("/", status_code=status.HTTP_200_OK)
+@router.delete("/answer/{answer_id}", status_code=status.HTTP_200_OK)
 async def delete_answer_by_id(answer_id: int):
     await answer_service.delete_answer_by_id(answer_id)
 
@@ -68,6 +68,3 @@ async def delete_all_question_answers_by_question_id(question_id: int):
 @router.delete("/user/{user_id}", status_code=status.HTTP_200_OK)
 async def delete_all_user_answers_by_user_id(user_id: int):
     await answer_service.delete_all_user_answers_by_user_id(user_id)
-
-
-

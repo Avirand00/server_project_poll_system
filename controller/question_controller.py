@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from starlette import status
 from model.question import Question
 from service import question_service
@@ -33,5 +33,3 @@ async def update_question(question_id: int, question: Question):
 @router.delete("/{question_id}", status_code=status.HTTP_200_OK)
 async def delete_question(question_id: int):
     await question_service.delete_question_by_id(question_id)
-
-
